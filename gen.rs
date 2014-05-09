@@ -134,7 +134,7 @@ pub fn gen_rs(out: Box<io::Writer>, abi: ~str, links: &[~str], globs: Vec<Global
     };
     ctx.ext_cx.bt_push(ExpnInfo {
         call_site: DUMMY_SP,
-        callee: NameAndSpan { name: StrBuf::new(), format: MacroBang, span: None }
+        callee: NameAndSpan { name: "".to_owned(), format: MacroBang, span: None }
     });
     let uniq_globs = tag_dup_decl(globs);
 
