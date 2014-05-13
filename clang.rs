@@ -1,7 +1,7 @@
 #![allow(non_uppercase_pattern_statics)]
 
 use libc::{c_uint, c_char, c_int};
-use std::{cast, io, ptr, str};
+use std::{mem, io, ptr, str};
 use std::fmt;
 use std::hash::Hash;
 use std::hash::sip::SipState;
@@ -51,7 +51,7 @@ impl Cursor {
 
     pub fn visit(&self, func: CursorVisitor) {
         unsafe {
-            let data = cast::transmute::<&CursorVisitor, CXClientData>(&func);
+            let data = mem::transmute::<&CursorVisitor, CXClientData>(&func);
             clang_visitChildren(self.x, Some(visit_children), data);
         };
     }
@@ -123,7 +123,7 @@ impl Cursor {
 extern fn visit_children(cur: CXCursor, parent: ll::CXCursor,
                          data: CXClientData) -> ll::Enum_CXChildVisitResult {
     unsafe {
-        let func = cast::transmute::<CXClientData, &mut CursorVisitor>(data);
+        let func = mem::transmute::<CXClientData, &mut CursorVisitor>(data);
         return (*func)(&Cursor { x: cur }, &Cursor { x: parent });
     }
 }
@@ -323,9 +323,9 @@ impl TranslationUnit {
                  unsaved: &[UnsavedFile], opts: uint) -> TranslationUnit {
         let _fname = file.to_c_str();
         let fname = _fname.with_ref(|f| f);
-        let _c_args: ~[CString] = cmd_args.iter().map(|s| s.to_c_str()).collect();
-        let c_args: ~[*c_char] = _c_args.iter().map(|s| s.with_ref(|cs| cs)).collect();
-        let mut c_unsaved: ~[Struct_CXUnsavedFile] = unsaved.iter().map(|f| f.x).collect();
+        let _c_args: Vec<CString> = cmd_args.iter().map(|s| s.to_c_str()).collect();
+        let c_args: Vec<*c_char> = _c_args.iter().map(|s| s.with_ref(|cs| cs)).collect();
+        let mut c_unsaved: Vec<Struct_CXUnsavedFile> = unsaved.iter().map(|f| f.x).collect();
         let tu = unsafe {
             clang_parseTranslationUnit(ix.x, fname,
                                        c_args.as_ptr(),
@@ -338,7 +338,7 @@ impl TranslationUnit {
     }
 
     pub fn reparse(&self, unsaved: &[UnsavedFile], opts: uint) -> bool {
-        let mut c_unsaved: ~[Struct_CXUnsavedFile] = unsaved.iter().map(|f| f.x).collect();
+        let mut c_unsaved: Vec<Struct_CXUnsavedFile> = unsaved.iter().map(|f| f.x).collect();
 
         unsafe {
             clang_reparseTranslationUnit(self.x,
